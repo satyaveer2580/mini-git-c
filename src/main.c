@@ -7,6 +7,7 @@
 #include "sha1.h"
 #include "blob.h"
 #include "tree.h"
+#include "commit.h"
 
 int main(int argc, char *argv[])
 {
@@ -111,6 +112,36 @@ int main(int argc, char *argv[])
     {
         char hex_hash[41];
         write_tree(".", hex_hash);
+        printf("%s", hex_hash);
+    }
+
+    else if (strcmp(command, "commit-tree") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: commit-tree <tree_sha> [-p <parent_sha>] -m <message>\n");
+            return 1;
+        }
+        const char *tree_hash = argv[2];
+        const char *parent_hash = NULL;
+        const char *message = "";
+
+        for (int i = 3; i < argc; i++)
+        {
+            if (strcmp(argv[i], "-p") == 0 && i + 1 < argc)
+            {
+                parent_hash = argv[i + 1];
+                i++;
+            }
+            else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc)
+            {
+                message = argv[i + 1];
+                i++;
+            }
+        }
+
+        char hex_hash[41];
+        create_commit(tree_hash, parent_hash, message, hex_hash);
         printf("%s", hex_hash);
     }
 
