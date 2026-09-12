@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
         }
         ls_tree(argv[2]);
     }
-    
+
     else if (strcmp(command, "restore") == 0)
     {
         if (argc < 3)
@@ -166,6 +166,16 @@ int main(int argc, char *argv[])
         mkdir(dest);
         restore_tree(argv[2], dest);
         printf("Restored to %s\n", dest);
+    }
+
+    else if (strcmp(command, "log") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: log <commit_sha>\n");
+            return 1;
+        }
+        show_log(argv[2]);
     }
 
     else
