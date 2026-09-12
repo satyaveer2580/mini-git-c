@@ -145,6 +145,29 @@ int main(int argc, char *argv[])
         printf("%s", hex_hash);
     }
 
+    else if (strcmp(command, "ls-tree") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: ls-tree <tree_sha>\n");
+            return 1;
+        }
+        ls_tree(argv[2]);
+    }
+    
+    else if (strcmp(command, "restore") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: restore <tree_sha> [dest_dir]\n");
+            return 1;
+        }
+        const char *dest = (argc >= 4) ? argv[3] : ".";
+        mkdir(dest);
+        restore_tree(argv[2], dest);
+        printf("Restored to %s\n", dest);
+    }
+
     else
     {
         fprintf(stderr, "Unknown command %s\n", command);
