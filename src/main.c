@@ -178,6 +178,42 @@ int main(int argc, char *argv[])
         show_log(argv[2]);
     }
 
+    else if (strcmp(command, "diff") == 0)
+    {
+        if (argc < 4)
+        {
+            fprintf(stderr, "Usage: diff <hash1> <hash2>\n");
+            return 1;
+        }
+        diff_blobs(argv[2], argv[3]);
+    }
+    else if (strcmp(command, "search") == 0)
+    {
+        if (argc < 4)
+        {
+            fprintf(stderr, "Usage: search <commit_sha> <keyword>\n");
+            return 1;
+        }
+        search_log(argv[2], argv[3]);
+    }
+    else if (strcmp(command, "remove") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: remove <filename>\n");
+            return 1;
+        }
+        if (remove(argv[2]) == 0)
+        {
+            printf("Removed %s\n", argv[2]);
+        }
+        else
+        {
+            fprintf(stderr, "Failed to remove %s: %s\n", argv[2], strerror(errno));
+            return 1;
+        }
+    }
+
     else
     {
         fprintf(stderr, "Unknown command %s\n", command);

@@ -7,13 +7,15 @@
 #include "sha1.h"
 #include "commit.h"
 
-void create_commit(const char *tree_hash, const char *parent_hash, const char *message, char *out_hex_hash) {
+void create_commit(const char *tree_hash, const char *parent_hash, const char *message, char *out_hex_hash)
+{
     char content[65536];
     int pos = 0;
 
     pos += sprintf(content + pos, "tree %s\n", tree_hash);
 
-    if (parent_hash != NULL && strlen(parent_hash) > 0) {
+    if (parent_hash != NULL && strlen(parent_hash) > 0)
+    {
         pos += sprintf(content + pos, "parent %s\n", parent_hash);
     }
 
@@ -32,8 +34,9 @@ void create_commit(const char *tree_hash, const char *parent_hash, const char *m
 
     unsigned char hash[20];
     sha1_hash(store, store_len, hash);
-    for (int i = 0; i < 20; i++) {
-        sprintf(out_hex_hash + (i*2), "%02x", hash[i]);
+    for (int i = 0; i < 20; i++)
+    {
+        sprintf(out_hex_hash + (i * 2), "%02x", hash[i]);
     }
     out_hex_hash[40] = '\0';
 
@@ -55,18 +58,19 @@ void create_commit(const char *tree_hash, const char *parent_hash, const char *m
     free(compressed);
 }
 
-#include <string.h>
-
-void show_log(const char *commit_hash) {
+void show_log(const char *commit_hash)
+{
     char current_hash[41];
     strcpy(current_hash, commit_hash);
 
-    while (strlen(current_hash) > 0) {
+    while (strlen(current_hash) > 0)
+    {
         char path[256];
         snprintf(path, sizeof(path), ".git/objects/%.2s/%s", current_hash, current_hash + 2);
 
         FILE *f = fopen(path, "rb");
-        if (f == NULL) {
+        if (f == NULL)
+        {
             fprintf(stderr, "Failed to open commit: %s\n", current_hash);
             return;
         }
@@ -83,27 +87,92 @@ void show_log(const char *commit_hash) {
         uncompress(decompressed, &decompressed_size, compressed, fsize);
         free(compressed);
 
-        char *content = (char*)memchr(decompressed, '\0', decompressed_size);
-        content++;
+        unsigned char *content_ptr = memchr(decompressed, '\0', decompressed_size);
+        content_ptr++;
+        long content_len = decompressed_size - (content_ptr - decompressed);
+
+        char content_copy[65536];
+        memcpy(content_copy, content_ptr, content_len);
+        content_copy[content_len] = '\0';
 
         printf("commit %s\n", current_hash);
 
         char parent_hash[41] = "";
-        char *line = strtok(content, "\n");
-        int in_message = 0;
-        while (line != NULL) {
-            if (strncmp(line, "parent ", 7) == 0) {
-                strcpy(parent_hash, line + 7);
-            } else if (strncmp(line, "author ", 7) == 0) {
-                printf("%s\n", line);
-            } else if (strlen(line) == 0) {
-                in_message = 1;
-            } else if (in_message) {
-                printf("\n    %s\n", line);
-            }
-            line = strtok(NULL, "\n");
+        char *parent_line = strstr(content_copy, "parent ");
+        if (parent_line != NULL) {
+            sscanf(parent_line + 7, "%40s", parent_hash);
+        }
+
+        char *author_line = strstr(content_copy, "author ");
+        if (author_line != NULL) {
+            char author_str[256];
+            sscanf(author_line, "%255[^\n]", author_str);
+            printf("%s\n", author_str);
+        }
+
+        char *msg_start = strstr(content_copy, "\n\n");
+        if (msg_start != NULL) {
+            printf("\n    %s\n", msg_start + 2);
         }
         printf("\n");
+
+        free(decompressed);
+        strcpy(current_hash, parent_hash);
+    }
+}
+
+void search_log(const char *commit_hash, const char *keyword)
+{
+    char current_hash[41];
+    strcpy(current_hash, commit_hash);
+
+    while (strlen(current_hash) > 0)
+    {
+        char path[256];
+        snprintf(path, sizeof(path), ".git/objects/%.2s/%s", current_hash, current_hash + 2);
+
+        FILE *f = fopen(path, "rb");
+        if (f == NULL)
+            return;
+        fseek(f, 0, SEEK_END);
+        long fsize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+
+        unsigned char *compressed = malloc(fsize);
+        fread(compressed, 1, fsize, f);
+        fclose(f);
+
+        unsigned long decompressed_size = fsize * 20;
+        unsigned char *decompressed = malloc(decompressed_size);
+        uncompress(decompressed, &decompressed_size, compressed, fsize);
+        free(compressed);
+
+        unsigned char *content_ptr = memchr(decompressed, '\0', decompressed_size);
+        content_ptr++;
+        long content_len = decompressed_size - (content_ptr - decompressed);
+
+        char content_copy[65536];
+        memcpy(content_copy, content_ptr, content_len);
+        content_copy[content_len] = '\0';
+
+        char parent_hash[41] = "";
+        char *parent_line = strstr(content_copy, "parent ");
+        if (parent_line != NULL)
+        {
+            sscanf(parent_line + 7, "%40s", parent_hash);
+        }
+
+        char *msg_start = strstr(content_copy, "\n\n");
+        char message[4096] = "";
+        if (msg_start != NULL)
+        {
+            strcpy(message, msg_start + 2);
+        }
+
+        if (strstr(message, keyword) != NULL)
+        {
+            printf("commit %s\n    %s\n\n", current_hash, message);
+        }
 
         free(decompressed);
         strcpy(current_hash, parent_hash);
