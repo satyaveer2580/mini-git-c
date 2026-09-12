@@ -6,6 +6,7 @@
 #include <errno.h>
 #include "sha1.h"
 #include "blob.h"
+#include "tree.h"
 
 int main(int argc, char *argv[])
 {
@@ -106,6 +107,13 @@ int main(int argc, char *argv[])
         create_blob(argv[3], hex_hash);
         printf("%s", hex_hash);
     }
+    else if (strcmp(command, "write-tree") == 0)
+    {
+        char hex_hash[41];
+        write_tree(".", hex_hash);
+        printf("%s", hex_hash);
+    }
+
     else
     {
         fprintf(stderr, "Unknown command %s\n", command);

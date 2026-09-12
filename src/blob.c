@@ -57,3 +57,11 @@ void create_blob(const char *filename, char *out_hex_hash) {
     free(store);
     free(compressed);
 }
+
+void create_blob_raw(const char *filename, unsigned char *out_raw_hash) {
+    char hex_hash[41];
+    create_blob(filename, hex_hash);
+    for (int i = 0; i < 20; i++) {
+        sscanf(hex_hash + i*2, "%2hhx", &out_raw_hash[i]);
+    }
+}
